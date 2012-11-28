@@ -258,7 +258,7 @@ public class AIPath : MonoBehaviour {
 		} else if (controller != null) {
 			controller.SimpleMove (dir);
 		} else if (rigid != null) {
-			rigid.AddForce (dir);
+			rigid.GetComponent<UnitController>().setVelocity (dir);
 		} else {
 			transform.Translate (dir, Space.World);
 		}
