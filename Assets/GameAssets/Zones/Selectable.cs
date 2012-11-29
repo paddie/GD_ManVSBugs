@@ -297,9 +297,10 @@ public class Selectable : MonoBehaviour {
 			
 			for ( int i = 0; i < this.TrooperUnits.Count; i++ ) {
 				if ( this.TrooperUnits[i] == unit) {
-					Debug.LogError("Docked trooper(" + unit.GetComponent<UnitLogic>().id + ") Died! Before = " + this.TrooperUnits.Count);
+					//Debug.LogError("Docked trooper(" + unit.GetComponent<UnitLogic>().id + ") Died! Before = " + this.TrooperUnits.Count);
 					this.TrooperUnits.RemoveAt(i);
-					Debug.LogError("Docked trooper(" + unit.GetComponent<UnitLogic>().id + ") Died! Count = " + this.TrooperUnits.Count);
+					//Debug.LogError("Docked trooper(" + unit.GetComponent<UnitLogic>().id + ") Died! Count = " + this.TrooperUnits.Count);
+					break;
 				}
 			}
 			

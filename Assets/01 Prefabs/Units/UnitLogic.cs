@@ -24,6 +24,10 @@ public class UnitLogic : MonoBehaviour {
 	public float firingFrequency = 0.7f;
 	private bool hasArrived = false;
 	private bool isDead = false;
+	private Transform currentEnemy = null;
+	
+	public LayerMask selectionLayer;
+
 	
 	public void Start() {
 		
@@ -35,60 +39,75 @@ public class UnitLogic : MonoBehaviour {
 		InvokeRepeating("ScanForEnemies", 0.0f, ScanFrequency);
 	}
 	
-	public void ScanForEnemies() {	
+	private Transform LocateClosestEnemy() {
+		Transform closestEnemy = null;
 		Collider[] objectsInRange = Physics.OverlapSphere(transform.position, ScanRadius);
-	    
-	    // identify closest enemy and shoot!
-	    float maxDistance = 1000;
-	    Transform closestEnemy = null;
-	    foreach (Collider col in objectsInRange) {
-	    	
+		float minDistance = 100.0f;
+		foreach (Collider col in objectsInRange) {
+			Transform enemy = col.transform;
 			// only check items that respoond to enemyTag
-	        if ( col.gameObject.tag == enemyTag ) {
-	        	
-	        	var distance = Vector3.Distance( col.transform.position, transform.position);
-	        	if ( distance < maxDistance ) {
-	        		closestEnemy = col.transform;
-	        		maxDistance = distance;
-	        	}
-	        }
-	    }
-	    
-	    if ( closestEnemy != null ) { 
-	    	Debug.LogError(gameObject.tag + "Engaging enemy!");
-	    	this.GetComponent<AIPath>().canMove = false;
-	    	EngageEnemy(closestEnemy);
-	    } else {
-	    	this.GetComponent<AIPath>().canMove = true;
-	    }
-	    
-	    //yield return new WaitForSeconds(ScanFrequency);
+	        if ( enemy.tag == enemyTag ) {
+				RaycastHit hit;
+				Vector3 direction = enemy.position - transform.position;
+				if ( Physics.Raycast (transform.position, direction, out hit,this.ScanRadius, this.selectionLayer) ) { 
+					//Debug.DrawRay(transform.position, enemy.position - transform.position, Color.red);
+					//Debug.LogWarning("enemy hidden by terrain");
+					continue;
+				} else {
+					float distance = Vector3.Distance( col.transform.position, transform.position);
+		        	if ( distance < minDistance ) {
+		        		closestEnemy = enemy;
+		        		minDistance = distance;
+		        	}
+		        }		
+			}
+    	}
+		
+		return closestEnemy;
+	}
+	
+	public void ScanForEnemies() {	
+		// if we engaged an enemy in the previous scan
+		// check if the enemy is still within range to save a scan
+		if ( this.currentEnemy != null ) {
+			RaycastHit hit;
+			Vector3 direction = this.currentEnemy.position - transform.position;
+			if ( Vector3.Distance(this.currentEnemy.position, transform.position) > this.ScanRadius ||
+				Physics.Raycast (transform.position, direction, out hit,this.ScanRadius, this.selectionLayer) ) {
+				
+				this.currentEnemy = null;
+			} else {
+				EngageEnemy(this.currentEnemy);
+				return;
+			}
+		}
+		
+		this.currentEnemy = LocateClosestEnemy();
+		if (this.currentEnemy == null) {
+			GetComponent<AIPath>().canMove = true;
+			return;	
+		}
+		EngageEnemy(this.currentEnemy);
 	}
 	
 	public void EngageEnemy(Transform enemy) {
-		// make sure the scanner doesn't run while we're engaging
-		//EnemyInRange = enemy;
+		Debug.DrawRay(transform.position, enemy.position - transform.position, Color.red);
 		
-		// only shoot at enemy while he is within scan radius
-//		if ( enemy != null  && gameObject != null &&
-//			Vector3.Distance(enemy.transform.position, transform.position) < ScanRadius ) 
-//		{
-			float prob = UnityEngine.Random.Range(0.0f,100.0f);
-			if ( prob <= unitAccuracy ) {
-				//baseDamage can be altered as unit is promoted
-				//Debug.LogError("Direct Hit! (" + prob + ")");
-				UnitLogic tr = null;
-				try {
-					enemy.GetComponent<UnitLogic>().DoDamage(baseDamage);
-				} catch (MissingReferenceException e) {
-					return;
-				} catch (NullReferenceException e) {
-					return;
-				}
+		GetComponent<AIPath>().canMove = false;
+		
+		float prob = UnityEngine.Random.Range(0.0f,100.0f);
+		if ( prob <= unitAccuracy ) {
+			//baseDamage can be altered as unit is promoted
+			//Debug.LogError("Direct Hit! (" + prob + ")");
+			UnitLogic tr = null;
+			try {
+				enemy.GetComponent<UnitLogic>().DoDamage(baseDamage);
+			} catch (MissingReferenceException e) {
+				return;
+			} catch (NullReferenceException e) {
+				return;
 			}
-			
-			//yield return new WaitForSeconds(firingFrequency);
-//		}
+		}
 	}
 	
 //	public void Deploy() {
