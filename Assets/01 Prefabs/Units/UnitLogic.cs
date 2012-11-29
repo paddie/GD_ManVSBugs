@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -6,6 +7,8 @@ public class UnitLogic : MonoBehaviour {
 
 	public float observeTimer = 0.1f;
 	public Material enemySightedMat;
+	public int id = 0;
+	
 	
 	// raceSpecifics
 	
@@ -18,7 +21,9 @@ public class UnitLogic : MonoBehaviour {
 	public float baseHealth = 10f;
 	public float baseDamage = 5f;
 	public string enemyTag;
-	public float firingFrequency = 0.7f;	
+	public float firingFrequency = 0.7f;
+	private bool hasArrived = false;
+	private bool isDead = false;
 	
 	public void Start() {
 		
@@ -50,8 +55,8 @@ public class UnitLogic : MonoBehaviour {
 		    }
 		    
 		    if ( closestEnemy != null ) { 
-		    	Debug.LogError("Engaging enemy!");
-		    	this.GetComponent<AIPath>().canMove = false;
+		    	//Debug.LogError("Engaging enemy!");
+		    	this.GetComponent<AIPath>().canMove = true;
 		    	EngageEnemy(closestEnemy);
 		    } else {
 		    	this.GetComponent<AIPath>().canMove = true;
@@ -68,17 +73,44 @@ public class UnitLogic : MonoBehaviour {
 //		if ( enemy != null  && gameObject != null &&
 //			Vector3.Distance(enemy.transform.position, transform.position) < ScanRadius ) 
 //		{
-			float prob = Random.Range(0.0f,100.0f);
+			float prob = UnityEngine.Random.Range(0.0f,100.0f);
 			if ( prob <= unitAccuracy ) {
-			//baseDamage can be altered as unit is promoted
-			//Debug.LogError("Direct Hit! (" + prob + ")");
-				enemy.GetComponent<UnitLogic>().DoDamage(baseDamage);
-			} //else {
-			//logic.DidDodge();
-			//}
+				//baseDamage can be altered as unit is promoted
+				//Debug.LogError("Direct Hit! (" + prob + ")");
+				UnitLogic tr = null;
+				try {
+					enemy.GetComponent<UnitLogic>().DoDamage(baseDamage);
+				} catch (MissingReferenceException e) {
+					return;
+				} catch (NullReferenceException e) {
+					return;
+				}
+			}
 			
 			//yield return new WaitForSeconds(firingFrequency);
 //		}
+	}
+	
+//	public void Deploy() {
+//		GetComponent<AIPath>().canMove = true;
+//		GetComponent<AIPath>().canSearch = true;
+//	}
+	
+	public void Dock() {
+		this.hasArrived = true;
+		GetComponent<AIPath>().canMove = false;
+		GetComponent<AIPath>().canSearch = false;
+	}
+	
+	private readonly object targetLock = new object();
+	
+	public void SetNewTarget(Transform node) {
+		lock ( this.targetLock ) {
+			GetComponent<AIPath>().target = node;
+		}
+		this.hasArrived = false;
+		GetComponent<AIPath>().canMove = true;
+		GetComponent<AIPath>().canSearch = true;
 	}
 	
 	public void DoDamage(float damage) {
@@ -87,10 +119,17 @@ public class UnitLogic : MonoBehaviour {
 			// update global playerScore etc.
 			//GameObject.Find("Game").GetComponent<GameLogic>().UnitDied(gameObject.name);
 			Transform target = gameObject.GetComponent<AIPath>().target;
-			Destroy(gameObject);
-			if (target == null) return;
-			target.GetComponent<Selectable>().ApproachingOrArrivedTrooperDied();
+			lock ( this.targetLock ) {
+				if (target != null && this.enemyTag == "Bug" && !this.isDead) {
+					if ( this.hasArrived && !this.isDead) {
+						target.GetComponent<Selectable>().DockedTrooperDied(transform);
+					} else {
+						target.GetComponent<Selectable>().ApproachingTrooperDied(this.id);
+					}
+					this.isDead = true;
+					Destroy(gameObject);
+				}
+			}
 		}
 	}
-	
 }

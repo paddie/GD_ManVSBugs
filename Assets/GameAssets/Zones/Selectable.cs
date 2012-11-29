@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -13,21 +14,25 @@ public class Selectable : MonoBehaviour {
 
 	public int Capacity = 10;
 	public int TrooperCapacity = 10;
-
+	
+	public int ApproachingTroopers = 0;
+	public int ApproachingBugs = 0;
 	public int CurrentTrooperCount = 0;
 	public int CurrentBugCount = 0;
 
 	public Transform TrooperTarget = null;
-	private Queue<Transform> TrooperUnits = new Queue<Transform>();
+	private List<Transform> TrooperUnits = new List<Transform>();
 
 	public Transform BugTarget = null;
-	private Queue<Transform> BugUnits = new Queue<Transform>();
+	private List<Transform> BugUnits = new List<Transform>();
 
 	// set to true if the node is selected by a user
 	public bool isSelected = false;
 
 	// node is blocked
 	public bool isBlocked = false;
+	
+	private readonly object TrooperUnitsLock = new object();
 
 	// for displaying the target-node-number relative to selected node
 	//	var isTarget : boolean = false;
@@ -151,51 +156,45 @@ public class Selectable : MonoBehaviour {
 	
 	// CurrentTrooperCount is increased thorugh PermissionToBoard()
 	public void EnqeueUnit( Transform unit ) {
-		this.TrooperUnits.Enqueue(unit);
-		unit.GetComponent<AIPath>().canMove = false;
-		unit.GetComponent<AIPath>().canSearch = false;
-		unit.GetComponent<AIPath>().target = null;
-		//this.CurrentTrooperCount += 1;
-	}
-	
-	public void DeployUnit(Transform unit) {
-		this.CurrentTrooperCount -= 1;
-		unit.GetComponent<AIPath>().target = this.TrooperTarget;
-	}
-	
-	public void DeployUnitsFromQueue(int count) {
-		// 2) pop unit from list
-		Transform unit = null;
-		
-		
-		for ( int i = 0; i < count ; i++ ) {
-			unit = this.TrooperUnits.Dequeue();
-			unit.GetComponent<AIPath>().canMove = true;
-			unit.GetComponent<AIPath>().canSearch = true;
-			
-			unit.GetComponent<AIPath>().target = this.TrooperTarget;
+		lock ( this.TrooperUnitsLock ) {
+			unit.GetComponent<UnitLogic>().Dock();
+			//this.ApproachingTroopers -= 1;
+			this.CurrentTrooperCount += 1;
+			this.TrooperUnits.Add(unit);
 		}
-		this.CurrentTrooperCount -= count;
-		
 	}
+	
+//	public void DeployUnit(Transform unit) {
+//		unit.GetComponent<UnitLogic>().SetNewTarget(this.TrooperTarget);
+//		this.CurrentTrooperCount -= 1;
+//	}
+	
+//	public void DeployUnitsFromQueue(int count) {
+//		// 2) pop unit from list
+//		
+//	}
 	
 	private void releaseTheTroops() {
 		// only release units if the node has been unblocked
-		if ( this.isBlocked || this.TrooperTarget == null) return;
+		if ( this.isBlocked || 
+			 this.TrooperTarget == null ||
+			 this.TrooperUnits.Count == 0 ) return;
 		
-		int count = this.TrooperUnits.Count;
-		
-		if ( count == 0 ) { return; }
 		//Debug.LogError("TrooperUnits length: " + this.TrooperUnits.length);
 		// 1) reserve space on the node
-		int permissable = this.TrooperTarget.GetComponent<Selectable>().PermissionToBoard(count);
-		
-		
-		
-		if ( permissable == 0 ) { return; }
-		
-		DeployUnitsFromQueue(count);
-		return;
+		lock(this.TrooperUnitsLock ) {
+			int permissable = this.TrooperTarget.GetComponent<Selectable>().PermissionToBoard(this.TrooperUnits.Count);
+			// no room for units at the next node
+			if ( permissable == 0 ) { return; }
+			
+			Transform unit = null;
+			for ( int i = 0; i < permissable ; i++ ) {
+				this.TrooperUnits[0].GetComponent<UnitLogic>().SetNewTarget(this.TrooperTarget);
+				this.TrooperUnits.RemoveAt(0);
+				
+			}
+			this.CurrentTrooperCount -= this.TrooperUnits.Count;
+		}
 	}
 	
 	// handles: enemies entering the node
@@ -215,14 +214,18 @@ public class Selectable : MonoBehaviour {
 		if ( unit.GetComponent<AIPath>().target == null || unit.GetComponent<AIPath>().target == transform ) {
 			// trooper logic
 			if (unit.tag == "Trooper" ) {
+				
+				this.ApproachingTroopers -= 1;
+				//Debug.LogError("Approaching unit has arrived!: " + this.ApproachingTroopers);
 				//Debug.LogError("Trooper entered!");
-				if ( this.TrooperTarget != null && !this.isBlocked ) {
-					//Debug.LogError("Zone is unblocked and has a target!");
-					if ( this.TrooperTarget.GetComponent<Selectable>().PermissionToBoard(1) == 1 ) {
-						this.CurrentTrooperCount -= 1;
-						unit.GetComponent<AIPath>().target = this.TrooperTarget;
-						return;
-					}
+				if ( this.TrooperTarget != null &&
+					 !this.isBlocked &&
+					 this.TrooperTarget.GetComponent<Selectable>().PermissionToBoard(1) == 1) {
+					//Debug.LogError("Zone is unblocked and has a target!")
+					// might be a race condition
+					
+					unit.GetComponent<UnitLogic>().SetNewTarget(this.TrooperTarget);
+					return;
 				}
 				//unit.GetComponent( Route ).target = transform;
 				//this.CurrentTrooperCount += 1;
@@ -234,7 +237,12 @@ public class Selectable : MonoBehaviour {
 					return;
 				}
 				//this.BugUnits.Enqueue(unit);
+				try {
+					
 				unit.GetComponent<AIPath>().target = transform.GetComponent<BugTargets>().currentTarget;
+				} catch ( Exception e ) {
+					
+				}
 			}
 		}
 	}
@@ -272,26 +280,57 @@ public class Selectable : MonoBehaviour {
 	}
 	
 	// called by units with the node as their target as they die
-	public void ApproachingOrArrivedTrooperDied() {
-		
-		this.CurrentTrooperCount -= 1;
-		//Debug.LogError("Reducing troopercount: " + this.CurrentTrooperCount);
+	public void ApproachingTrooperDied(int id) {
+		//lock ( this.TrooperUnitsLock ) {
+			this.ApproachingTroopers -= 1;
+			//Debug.LogError("Approaching trooper(" + id + ") Died! Count = " + this.ApproachingTroopers);
+		//}
 	}
+	
+	public void DockedTrooperDied(Transform unit) {
+		lock ( this.TrooperUnitsLock ) {
+			
+			for ( int i = 0; i < this.TrooperUnits.Count; i++ ) {
+				if ( this.TrooperUnits[i] == unit) {
+					//Debug.LogError("Docked trooper Died!: " + i);
+					this.TrooperUnits.RemoveAt(i);
+				}
+			}
+			this.CurrentTrooperCount = this.TrooperUnits.Count;
+		}
+	}
+	
+//	public void DeployUnit(Transform unit) {
+//		//lock ( this.TrooperUnitsLock ) {
+//			this.CurrentTrooperCount -= 1;
+//			for ( int i =0; i < this.TrooperUnits.Count ; i++ ) {
+//				if ( unit == this.TrooperUnits[i] ) {
+//					this.TrooperUnits.RemoveAt(i);
+//					//this.CurrentTrooperCount -= this.TrooperCount;
+//				}
+//			}
+//		//}
+//	}
 	
 	// if the node has capacity, reserve a space (increase troopercount) and return 'true'
 	// - oelse return 'false'
 	public int PermissionToBoard(int count) {
-		int permissableUnits = this.TrooperCapacity - this.CurrentTrooperCount;
-		
-		if ( permissableUnits == 0  ) { return 0; }
-		
-		if ( permissableUnits >= count ) {
-			this.CurrentTrooperCount += count;
-			return count;
-		} else {
-			this.CurrentTrooperCount += permissableUnits;
-			return permissableUnits;
-		}
+		lock(this.TrooperUnitsLock) {
+			
+			int permissableUnits = this.TrooperCapacity - (this.CurrentTrooperCount + this.ApproachingTroopers);
+			
+			if ( permissableUnits == 0  ) { return 0; }
+			
+			if ( permissableUnits >= count ) {
+				//Debug.LogError(count + " units approaching.");
+				this.ApproachingTroopers += count;
+				return count;
+			} else {
+				//Debug.LogError(permissableUnits + " units approaching.");
+				this.ApproachingTroopers += permissableUnits;
+				return permissableUnits;
+			}
+		} // unlock
 	}
 	
 	/*
