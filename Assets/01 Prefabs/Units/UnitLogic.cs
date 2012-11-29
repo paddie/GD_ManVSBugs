@@ -83,7 +83,6 @@ public class UnitLogic : MonoBehaviour {
 	
 	public void DoDamage(float damage) {
 		this.baseHealth -= damage;
-		transform.renderer.material = enemySightedMat;
 		if ( this.baseHealth < 0.0 ) {
 			// update global playerScore etc.
 			//GameObject.Find("Game").GetComponent<GameLogic>().UnitDied(gameObject.name);
