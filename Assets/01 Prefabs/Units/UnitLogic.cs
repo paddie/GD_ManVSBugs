@@ -36,33 +36,33 @@ public class UnitLogic : MonoBehaviour {
 	}
 	
 	public void ScanForEnemies() {	
-			Collider[] objectsInRange = Physics.OverlapSphere(transform.position, ScanRadius);
-		    
-		    // identify closest enemy and shoot!
-		    float maxDistance = 1000;
-		    Transform closestEnemy = null;
-		    foreach (Collider col in objectsInRange) {
-		    	
-				// only check items that respoond to enemyTag
-		        if ( col.gameObject.tag == enemyTag ) {
-		        	
-		        	var distance = Vector3.Distance( col.transform.position, transform.position);
-		        	if ( distance < maxDistance ) {
-		        		closestEnemy = col.transform;
-		        		maxDistance = distance;
-		        	}
-		        }
-		    }
-		    
-		    if ( closestEnemy != null ) { 
-		    	//Debug.LogError("Engaging enemy!");
-		    	this.GetComponent<AIPath>().canMove = true;
-		    	EngageEnemy(closestEnemy);
-		    } else {
-		    	this.GetComponent<AIPath>().canMove = true;
-		    }
-		    
-		    //yield return new WaitForSeconds(ScanFrequency);
+		Collider[] objectsInRange = Physics.OverlapSphere(transform.position, ScanRadius);
+	    
+	    // identify closest enemy and shoot!
+	    float maxDistance = 1000;
+	    Transform closestEnemy = null;
+	    foreach (Collider col in objectsInRange) {
+	    	
+			// only check items that respoond to enemyTag
+	        if ( col.gameObject.tag == enemyTag ) {
+	        	
+	        	var distance = Vector3.Distance( col.transform.position, transform.position);
+	        	if ( distance < maxDistance ) {
+	        		closestEnemy = col.transform;
+	        		maxDistance = distance;
+	        	}
+	        }
+	    }
+	    
+	    if ( closestEnemy != null ) { 
+	    	Debug.LogError(gameObject.tag + "Engaging enemy!");
+	    	this.GetComponent<AIPath>().canMove = false;
+	    	EngageEnemy(closestEnemy);
+	    } else {
+	    	this.GetComponent<AIPath>().canMove = true;
+	    }
+	    
+	    //yield return new WaitForSeconds(ScanFrequency);
 	}
 	
 	public void EngageEnemy(Transform enemy) {
@@ -126,9 +126,12 @@ public class UnitLogic : MonoBehaviour {
 					} else {
 						target.GetComponent<Selectable>().ApproachingTrooperDied(this.id);
 					}
-					this.isDead = true;
-					Destroy(gameObject);
+				
+				} else {
+					// notify of bug death?
 				}
+				this.isDead = true;
+				Destroy(gameObject);
 			}
 		}
 	}

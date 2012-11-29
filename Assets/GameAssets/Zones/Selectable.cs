@@ -189,11 +189,16 @@ public class Selectable : MonoBehaviour {
 			
 			Transform unit = null;
 			for ( int i = 0; i < permissable ; i++ ) {
-				this.TrooperUnits[0].GetComponent<UnitLogic>().SetNewTarget(this.TrooperTarget);
-				this.TrooperUnits.RemoveAt(0);
+				try {
+					this.TrooperUnits[0].GetComponent<UnitLogic>().SetNewTarget(this.TrooperTarget);
+					this.TrooperUnits.RemoveAt(0);
+				} catch (Exception e) {
+					
+				}
+				this.CurrentTrooperCount -= 1;
 				
 			}
-			this.CurrentTrooperCount -= this.TrooperUnits.Count;
+			//this.CurrentTrooperCount -= this.TrooperUnits.Count;
 		}
 	}
 	
@@ -292,11 +297,14 @@ public class Selectable : MonoBehaviour {
 			
 			for ( int i = 0; i < this.TrooperUnits.Count; i++ ) {
 				if ( this.TrooperUnits[i] == unit) {
-					//Debug.LogError("Docked trooper Died!: " + i);
+					Debug.LogError("Docked trooper(" + unit.GetComponent<UnitLogic>().id + ") Died! Before = " + this.TrooperUnits.Count);
 					this.TrooperUnits.RemoveAt(i);
+					Debug.LogError("Docked trooper(" + unit.GetComponent<UnitLogic>().id + ") Died! Count = " + this.TrooperUnits.Count);
 				}
 			}
-			this.CurrentTrooperCount = this.TrooperUnits.Count;
+			
+			this.CurrentTrooperCount -= 1;
+			
 		}
 	}
 	
