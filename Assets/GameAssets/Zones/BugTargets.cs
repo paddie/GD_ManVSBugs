@@ -12,21 +12,21 @@ public class BugTargets : MonoBehaviour {
 	
 	// Use this for initialization
 	void Start () {
-		InvokeRepeating("retarget",15.0f,15.0f);
+		InvokeRepeating("retarget",0.0f,15.0f);
 	}
 	
 	void retarget() {
 		float prob = Random.Range(0.0f,100.0f);
 		if ( prob < 33.0f ) {
-			this.currentTarget = this.target1.transform;
+			GetComponent<Selectable>().SetTargetBug(this.target1.transform);
 			return;
 		}
 		if ( prob >= 33.0f && prob <= 66.0f ) {
-			this.currentTarget = this.target2.transform;
+			GetComponent<Selectable>().SetTargetBug(this.target2.transform);
 			return;
 		}
 		if ( prob > 66.0f ) {
-			this.currentTarget = this.target3.transform;
+			GetComponent<Selectable>().SetTargetBug(this.target3.transform);
 			return;
 		}
 	}

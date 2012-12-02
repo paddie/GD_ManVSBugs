@@ -85,7 +85,7 @@ public class UnitLogic : MonoBehaviour {
 		this.currentEnemy = LocateClosestEnemy();
 		if (this.currentEnemy == null) {
 			GetComponent<AIPath>().canMove = true;
-			return;	
+			return;
 		}
 		EngageEnemy(this.currentEnemy);
 	}
@@ -99,7 +99,7 @@ public class UnitLogic : MonoBehaviour {
 		if ( prob <= unitAccuracy ) {
 			//baseDamage can be altered as unit is promoted
 			//Debug.LogError("Direct Hit! (" + prob + ")");
-			UnitLogic tr = null;
+			//UnitLogic tr = null;
 			try {
 				enemy.GetComponent<UnitLogic>().DoDamage(baseDamage);
 			} catch (MissingReferenceException e) {
@@ -110,11 +110,6 @@ public class UnitLogic : MonoBehaviour {
 		}
 	}
 	
-//	public void Deploy() {
-//		GetComponent<AIPath>().canMove = true;
-//		GetComponent<AIPath>().canSearch = true;
-//	}
-	
 	public void Dock() {
 		this.hasArrived = true;
 		GetComponent<AIPath>().canMove = false;
@@ -124,9 +119,9 @@ public class UnitLogic : MonoBehaviour {
 	private readonly object targetLock = new object();
 	
 	public void SetNewTarget(Transform node) {
-		lock ( this.targetLock ) {
+		//lock ( this.targetLock ) {
 			GetComponent<AIPath>().target = node;
-		}
+		//}
 		this.hasArrived = false;
 		GetComponent<AIPath>().canMove = true;
 		GetComponent<AIPath>().canSearch = true;
@@ -138,16 +133,14 @@ public class UnitLogic : MonoBehaviour {
 			// update global playerScore etc.
 			//GameObject.Find("Game").GetComponent<GameLogic>().UnitDied(gameObject.name);
 			Transform target = gameObject.GetComponent<AIPath>().target;
+			
+			if ( target == null || this.isDead ) return;
+			
 			lock ( this.targetLock ) {
-				if (target != null && this.enemyTag == "Bug" && !this.isDead) {
-					if ( this.hasArrived && !this.isDead) {
-						target.GetComponent<Selectable>().DockedTrooperDied(transform);
-					} else {
-						target.GetComponent<Selectable>().ApproachingTrooperDied(this.id);
-					}
-				
+				if ( this.hasArrived ) {
+					target.GetComponent<Selectable>().DockedUnitDied(transform);
 				} else {
-					// notify of bug death?
+					target.GetComponent<Selectable>().ApproachingUnitDied(this.tag);
 				}
 				this.isDead = true;
 				Destroy(gameObject);
