@@ -22,11 +22,15 @@ public class DropZone : MonoBehaviour {
 		} else {
 			Unit = Bug;	
 		}
+		
+		GameObject.Find("GameLogic").GetComponent<GameState>().DropZoneConquor(type);
 		//return Unit.tag;
 	}
 	
 	private void SpawnUnits() {
 		Transform unit;
+		
+		if ( GameObject.Find("GameLogic").GetComponent<GameState>().gameOver ) return;
 		//Debug.LogError("spawning Unit: " + Unit.name);
 		if ( GetComponent<Selectable>().PermissionToBoard(1, Unit.tag) == 1 ) {
 			//Debug.LogError("SPAWNING!");
@@ -35,6 +39,7 @@ public class DropZone : MonoBehaviour {
 				new Vector3(transform.position.x, transform.position.y+1, transform.position.z),
 				transform.rotation);
 			this.spawnCount += 1;
+			GameObject.Find("GameLogic").GetComponent<GameState>().UnitSpawned(unit.tag);
 			unit.GetComponent<UnitLogic>().id = this.spawnCount;
 		}
 	}

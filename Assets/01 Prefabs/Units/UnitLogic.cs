@@ -142,6 +142,7 @@ public class UnitLogic : MonoBehaviour {
 				} else {
 					target.GetComponent<Selectable>().ApproachingUnitDied(this.tag);
 				}
+				GameObject.Find("GameLogic").GetComponent<GameState>().UnitDied(this.tag);
 				this.isDead = true;
 				Destroy(gameObject);
 			}

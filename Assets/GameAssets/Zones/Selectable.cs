@@ -17,7 +17,7 @@ public class Selectable : MonoBehaviour {
 //	public selectedMaterial : Material;
 //	var targetMaterial : Material;
 
-	public int Capacity = 10;
+	//public int Capacity = 10;
 	public int TrooperCapacity = 10;
 	public int BugCapacity = 10;
 	
