@@ -16,7 +16,11 @@ public class GameState : MonoBehaviour {
 	public bool BugsWon = false;
 	
 	public bool gameOver = false;
+	
+	
+	private readonly object statLock = new object();
 
+	
 	// Use this for initialization
 	void Start () {
 		GameObject[] gos = GameObject.FindGameObjectsWithTag("DropZone");
@@ -30,34 +34,41 @@ public class GameState : MonoBehaviour {
 	void Update () {
 		if ( this.TroopersWon || this.BugsWon ) return;
 		
-		if (this.BugZones == 0 /*&& this.BugCount <= 0 */) {
-			Debug.LogError("Troopers Won!");
-			this.TroopersWon = true;
-			this.gameOver = true;
-		} else if ( this.TrooperZones == 0 /*&& this.TrooperCount <= 0 */) {
-			Debug.LogError("Bugs Won!");
-			this.BugsWon = true;
-			this.gameOver = true;
+		lock ( statLock ) {
+			if (this.BugZones == 0 /*&& this.BugCount <= 0 */) {
+				Debug.LogError("Troopers Won!");
+				this.TroopersWon = true;
+				this.gameOver = true;
+			} else if ( this.TrooperZones == 0 /*&& this.TrooperCount <= 0 */) {
+				Debug.LogError("Bugs Won!");
+				this.BugsWon = true;
+				this.gameOver = true;
+			}
 		}
 	}
 	
 	public void DropZoneConquor(string tag) {
-		if ( tag == "Bug" )	{ 
-			this.TrooperZones -= 1;
-			this.BugZones += 1;
-		} else {
-			this.TrooperZones += 1;
-			this.BugZones -= 1;
-		}	
+		lock ( statLock ) {
+			if ( tag == "Bug" )	{ 
+				this.TrooperZones -= 1;
+				this.BugZones += 1;
+			} else {
+				this.TrooperZones += 1;
+				this.BugZones -= 1;
+			}
+				
+		}
 	}
 	
 	public void UnitDied(string tag) {
-		if ( tag == "Bug" )	{ 
-			this.BugCount -= 1;
-			this.TrooperKills += 1;
-		} else {
-			this.TrooperCount -= 1;
-			this.BugKills += 1;
+		lock ( statLock ) {	
+			if ( tag == "Bug" )	{ 
+				this.BugCount -= 1;
+				this.TrooperKills += 1;
+			} else {
+				this.TrooperCount -= 1;
+				this.BugKills += 1;
+			}
 		}
 	}
 	

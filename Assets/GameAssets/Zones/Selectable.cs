@@ -219,6 +219,33 @@ public class Selectable : MonoBehaviour {
 			 this.BugTarget == null ||
 			 this.BugUnits.Count == 0 ) return;
 		
+		
+		if ( transform.tag == "DropZone" ) {
+			
+			if ( this.CurrentBugCount < this.BugCapacity ) {
+				return;	
+			}
+			
+			lock(this.BugUnitsLock ) {
+				int permissable = this.BugTarget.GetComponent<Selectable>().PermissionToBoard(this.BugUnits.Count, "Bug");
+				// no room for units at the next node
+				if ( permissable == 0 ) { return; }
+				
+				//Transform unit = null;
+				for ( int i = 0; i < permissable ; i++ ) {
+					try {
+						this.BugUnits[0].GetComponent<UnitLogic>().SetNewTarget(this.BugTarget);
+						this.BugUnits.RemoveAt(0);
+					} catch (Exception e) {
+						
+					}
+					this.CurrentBugCount -= 1;
+				}
+			}
+			
+			
+		}
+		
 		//Debug.LogError("TrooperUnits length: " + this.TrooperUnits.length);
 		// 1) reserve space on the node
 		lock(this.BugUnitsLock ) {
@@ -250,8 +277,6 @@ public class Selectable : MonoBehaviour {
 		lock(this.TrooperUnitsLock ) {
 			int permissable = this.TrooperTarget.GetComponent<Selectable>().PermissionToBoard(this.TrooperUnits.Count, "Trooper");
 			// no room for units at the next node
-			if ( permissable == 0 ) { return; }
-			
 			//Transform unit = null;
 			for ( int i = 0; i < permissable ; i++ ) {
 				try {
@@ -261,9 +286,7 @@ public class Selectable : MonoBehaviour {
 					
 				}
 				this.CurrentTrooperCount -= 1;
-				
 			}
-			//this.CurrentTrooperCount -= this.TrooperUnits.Count;
 		}
 	}
 	
@@ -304,9 +327,14 @@ public class Selectable : MonoBehaviour {
 			} else {
 				this.ApproachingBugs -= 1;
 				
+				if ( transform.tag == "DropZone" ) {
+					this.EnqeueUnit(unit);					
+					return;
+				}
+				
 				if ( this.BugTarget != null &&
 					 this.BugTarget.GetComponent<Selectable>().PermissionToBoard(1, unit.tag) == 1) {
-					Debug.LogError("Bug has a target!");
+					//Debug.LogError("Bug has a target!");
 					// might be a race condition
 					
 					unit.GetComponent<UnitLogic>().SetNewTarget(this.BugTarget);

@@ -22,7 +22,7 @@ public class UnitLogic : MonoBehaviour {
 	public float baseDamage = 5f;
 	public string enemyTag;
 	public float firingFrequency = 0.7f;
-	private bool hasArrived = false;
+	public bool hasArrived = false;
 	private bool isDead = false;
 	private Transform currentEnemy = null;
 	
@@ -97,9 +97,6 @@ public class UnitLogic : MonoBehaviour {
 		
 		float prob = UnityEngine.Random.Range(0.0f,100.0f);
 		if ( prob <= unitAccuracy ) {
-			//baseDamage can be altered as unit is promoted
-			//Debug.LogError("Direct Hit! (" + prob + ")");
-			//UnitLogic tr = null;
 			try {
 				Debug.DrawRay(transform.position, enemy.position - transform.position, Color.red);
 				enemy.GetComponent<UnitLogic>().DoDamage(baseDamage);
@@ -114,46 +111,55 @@ public class UnitLogic : MonoBehaviour {
 	public void Dock(Transform node) {
 		GetComponent<AIPath>().target = node;
 		this.hasArrived = true;
-		GetComponent<AIPath>().canMove = false;
+		//GetComponent<AIPath>().canMove = false;
 		GetComponent<AIPath>().canSearch = false;
 	}
 	
 	private readonly object targetLock = new object();
+	private readonly object isDeadLock = new object();
 	
 	public void SetNewTarget(Transform node) {
 		//lock ( this.targetLock ) {
-			GetComponent<AIPath>().target = node;
+		GetComponent<AIPath>().target = node;
 		//}
 		this.hasArrived = false;
-		GetComponent<AIPath>().canMove = true;
+		//GetComponent<AIPath>().canMove = true;
 		GetComponent<AIPath>().canSearch = true;
 	}
 	
 	public void DoDamage(float damage) {
-		this.baseHealth -= damage;
-		if ( this.baseHealth < 0.0 ) {
-			// update global playerScore etc.
-			//GameObject.Find("Game").GetComponent<GameLogic>().UnitDied(gameObject.name);
-			Transform target = gameObject.GetComponent<AIPath>().target;
-			GameObject.Find("GameLogic").GetComponent<GameState>().UnitDied(this.tag);
-			
-			if ( target == null ) {
+		
+		if ( this.isDead ) return;
+		
+		bool tearDown = false;
+		lock ( isDeadLock ) {
+			this.baseHealth -= damage;	
+			if ( this.baseHealth <= 0 && !this.isDead) {
 				this.isDead = true;
-				Destroy(gameObject);			
-				return;
-			}
-			
-			if ( this.isDead ) return;
-			lock ( this.targetLock ) {
-				if ( this.hasArrived ) {
-					target.GetComponent<Selectable>().DockedUnitDied(transform);
-				} else {
-					target.GetComponent<Selectable>().ApproachingUnitDied(this.tag);
-				}
-				//GameObject.Find("GameLogic").GetComponent<GameState>().UnitDied(this.tag);
-				this.isDead = true;
-				Destroy(gameObject);
+				tearDown = true;
 			}
 		}
+		
+		if ( !tearDown ) {
+			return;
+		}
+		
+		// teardown!
+		
+		// signal death to stat object
+		GameObject.Find("GameLogic").GetComponent<GameState>().UnitDied(this.tag);
+		
+		// if we've got a space reserved on an object, signal death to node
+		Transform target = gameObject.GetComponent<AIPath>().target;
+		if ( target != null ) {
+			if ( this.hasArrived ) {
+				target.GetComponent<Selectable>().DockedUnitDied(transform);
+			} else {
+				target.GetComponent<Selectable>().ApproachingUnitDied(this.tag);
+			}			
+		}
+		
+		Destroy(gameObject);
+
 	}
 }
