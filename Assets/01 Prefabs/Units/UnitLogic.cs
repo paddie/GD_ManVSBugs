@@ -91,7 +91,7 @@ public class UnitLogic : MonoBehaviour {
 	}
 	
 	public void EngageEnemy(Transform enemy) {
-		Debug.DrawRay(transform.position, enemy.position - transform.position, Color.red);
+		
 		
 		GetComponent<AIPath>().canMove = false;
 		
@@ -101,6 +101,7 @@ public class UnitLogic : MonoBehaviour {
 			//Debug.LogError("Direct Hit! (" + prob + ")");
 			//UnitLogic tr = null;
 			try {
+				Debug.DrawRay(transform.position, enemy.position - transform.position, Color.red);
 				enemy.GetComponent<UnitLogic>().DoDamage(baseDamage);
 			} catch (MissingReferenceException e) {
 				return;
@@ -110,7 +111,8 @@ public class UnitLogic : MonoBehaviour {
 		}
 	}
 	
-	public void Dock() {
+	public void Dock(Transform node) {
+		GetComponent<AIPath>().target = node;
 		this.hasArrived = true;
 		GetComponent<AIPath>().canMove = false;
 		GetComponent<AIPath>().canSearch = false;
@@ -133,16 +135,22 @@ public class UnitLogic : MonoBehaviour {
 			// update global playerScore etc.
 			//GameObject.Find("Game").GetComponent<GameLogic>().UnitDied(gameObject.name);
 			Transform target = gameObject.GetComponent<AIPath>().target;
+			GameObject.Find("GameLogic").GetComponent<GameState>().UnitDied(this.tag);
 			
-			if ( target == null || this.isDead ) return;
+			if ( target == null ) {
+				this.isDead = true;
+				Destroy(gameObject);			
+				return;
+			}
 			
+			if ( this.isDead ) return;
 			lock ( this.targetLock ) {
 				if ( this.hasArrived ) {
 					target.GetComponent<Selectable>().DockedUnitDied(transform);
 				} else {
 					target.GetComponent<Selectable>().ApproachingUnitDied(this.tag);
 				}
-				GameObject.Find("GameLogic").GetComponent<GameState>().UnitDied(this.tag);
+				//GameObject.Find("GameLogic").GetComponent<GameState>().UnitDied(this.tag);
 				this.isDead = true;
 				Destroy(gameObject);
 			}

@@ -166,16 +166,18 @@ public class Selectable : MonoBehaviour {
 	
 	// CurrentTrooperCount is increased thorugh PermissionToBoard()
 	public void EnqeueUnit( Transform unit ) {
+		
+		
 		if (unit.tag == "Trooper" ) {
 			lock ( this.TrooperUnitsLock ) {
-				unit.GetComponent<UnitLogic>().Dock();
+				unit.GetComponent<UnitLogic>().Dock(transform);
 				//this.ApproachingTroopers -= 1;
 				this.CurrentTrooperCount += 1;
 				this.TrooperUnits.Add(unit);
 			}	
 		} else {
 			lock ( this.BugUnitsLock ) {
-				unit.GetComponent<UnitLogic>().Dock();
+				unit.GetComponent<UnitLogic>().Dock(transform);
 				//this.ApproachingTroopers -= 1;
 				this.CurrentBugCount += 1;
 				this.BugUnits.Add(unit);
