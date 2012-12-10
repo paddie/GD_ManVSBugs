@@ -30,11 +30,11 @@ public class GameState : MonoBehaviour {
 	void Update () {
 		if ( this.TroopersWon || this.BugsWon ) return;
 		
-		if (this.BugZones == 0 && this.BugCount <= 0) {
+		if (this.BugZones == 0) {
 			Debug.LogError("Troopers Won!");
 			this.TroopersWon = true;
 			this.gameOver = true;
-		} else if ( this.TrooperZones == 0 && this.TrooperCount <= 0 ) {
+		} else if ( this.TrooperZones == 0 ) {
 			Debug.LogError("Bugs Won!");
 			this.BugsWon = true;
 			this.gameOver = true;

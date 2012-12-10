@@ -22,9 +22,10 @@ public class UnitLogic : MonoBehaviour {
 	public float baseDamage = 5f;
 	public string enemyTag;
 	public float firingFrequency = 0.7f;
-	private bool hasArrived = false;
+	public bool hasArrived = false;
 	private bool isDead = false;
 	private Transform currentEnemy = null;
+	
 	
 	public LayerMask selectionLayer;
 
@@ -39,7 +40,11 @@ public class UnitLogic : MonoBehaviour {
 		InvokeRepeating("ScanForEnemies", 0.0f, ScanFrequency);
 	}
 	
-	private Transform LocateClosestEnemy() {
+	public void Update() {
+
+	}
+		
+		private Transform LocateClosestEnemy() {
 		Transform closestEnemy = null;
 		Collider[] objectsInRange = Physics.OverlapSphere(transform.position, ScanRadius);
 		float minDistance = 100.0f;
@@ -48,8 +53,8 @@ public class UnitLogic : MonoBehaviour {
 			// only check items that respoond to enemyTag
 	        if ( enemy.tag == enemyTag ) {
 				RaycastHit hit;
-				Vector3 direction = enemy.position - transform.position;
-				if ( Physics.Raycast (transform.position, direction, out hit,this.ScanRadius, this.selectionLayer) ) { 
+				Vector3 direction = enemy.position - transform.position+Vector3.up;
+				if ( Physics.Raycast (transform.position+Vector3.up, direction, out hit,this.ScanRadius, this.selectionLayer) ) { 
 					//Debug.DrawRay(transform.position, enemy.position - transform.position, Color.red);
 					//Debug.LogWarning("enemy hidden by terrain");
 					continue;
@@ -73,7 +78,7 @@ public class UnitLogic : MonoBehaviour {
 			RaycastHit hit;
 			Vector3 direction = this.currentEnemy.position - transform.position;
 			if ( Vector3.Distance(this.currentEnemy.position, transform.position) > this.ScanRadius ||
-				Physics.Raycast (transform.position, direction, out hit,this.ScanRadius, this.selectionLayer) ) {
+				Physics.Raycast (transform.position+Vector3.up, direction, out hit,this.ScanRadius, this.selectionLayer) ) {
 				
 				this.currentEnemy = null;
 			} else {
@@ -101,7 +106,8 @@ public class UnitLogic : MonoBehaviour {
 			//Debug.LogError("Direct Hit! (" + prob + ")");
 			//UnitLogic tr = null;
 			try {
-				Debug.DrawRay(transform.position, enemy.position - transform.position, Color.red);
+				StartAttacking (enemy.position);
+				Invoke ("StopAttacking",0.05f);
 				enemy.GetComponent<UnitLogic>().DoDamage(baseDamage);
 			} catch (MissingReferenceException e) {
 				return;
@@ -111,7 +117,20 @@ public class UnitLogic : MonoBehaviour {
 		}
 	}
 	
+	private void StartAttacking(Vector3 to) {
+		transform.GetComponent<AnimationController>().StartAttacking(to);
+	}
+	
+	private void StopAttacking() {
+		transform.GetComponent<AnimationController>().StopAttacking();
+	}
+	
+	private void StopMoving() {
+		GetComponent<AIPath>().enabled = false;
+	}
+	
 	public void Dock(Transform node) {
+		Invoke ("StopMoving",0.5f);
 		GetComponent<AIPath>().target = node;
 		this.hasArrived = true;
 		GetComponent<AIPath>().canMove = false;
@@ -121,6 +140,7 @@ public class UnitLogic : MonoBehaviour {
 	private readonly object targetLock = new object();
 	
 	public void SetNewTarget(Transform node) {
+		GetComponent<AIPath>().enabled = true;
 		//lock ( this.targetLock ) {
 			GetComponent<AIPath>().target = node;
 		//}

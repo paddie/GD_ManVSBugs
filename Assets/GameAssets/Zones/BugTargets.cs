@@ -29,6 +29,8 @@ public class BugTargets : MonoBehaviour {
 			GetComponent<Selectable>().SetTargetBug(this.target3.transform);
 			return;
 		}
+		if (GetComponent<DropZone>().spawnTimer > 0.5f)
+		GetComponent<DropZone>().spawnTimer -= 0.4f;
 	}
 	// Update is called once per frame
 	

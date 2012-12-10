@@ -12,14 +12,12 @@ public class Route : MonoBehaviour {
 	private Material lmat;
 	private Point first;
 	private Vector3 s;
-	private LineRenderer lineRenderer;
 
 	void Start () {
         Seeker seeker = GetComponent<Seeker>();
         seeker.pathCallback = OnPathComplete;
 		mesh = new Mesh();
 		lmat = Camera.main.GetComponent<Controller>().arrowMaterial;
-		lineRenderer = gameObject.AddComponent<LineRenderer>();
     }
 	
 	void Update() {
@@ -45,7 +43,7 @@ public class Route : MonoBehaviour {
     public void OnPathComplete (Path p) {
 		DrawMesh (p);
     }
-	
+	/*
 	void DrawLineRenderer(Path p) {
 		Vector3[] path = p.vectorPath;
         lineRenderer.material = new Material(Shader.Find("Toon/Basic"));
@@ -58,6 +56,7 @@ public class Route : MonoBehaviour {
 			i++;
 		}
 	}
+	*/
 	
 	void DrawMesh(Path p) {
 		mesh.Clear();
