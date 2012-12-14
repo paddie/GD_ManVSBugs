@@ -10,6 +10,7 @@ public class GameState : MonoBehaviour {
 	public int BugKills = 0;
 	
 	public int BugZones = 0;
+	public int NeutralZones = 0;
 	public int TrooperZones = 0;
 	
 	public bool TroopersWon = false;
@@ -41,14 +42,24 @@ public class GameState : MonoBehaviour {
 		}
 	}
 	
+	public void DropZoneRelease(string tag) {
+		
+		if ( tag == "Bug" )	{
+			this.BugZones += 1;
+		} else {
+			this.BugZones -= 1;
+		}
+	}
+		
 	public void DropZoneConquor(string tag) {
+		
 		if ( tag == "Bug" )	{ 
 			this.TrooperZones -= 1;
 			this.BugZones += 1;
 		} else {
 			this.TrooperZones += 1;
 			this.BugZones -= 1;
-		}	
+		}
 	}
 	
 	public void UnitDied(string tag) {

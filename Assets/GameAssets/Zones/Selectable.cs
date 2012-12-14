@@ -8,7 +8,8 @@ public class Selectable : MonoBehaviour {
 	
 	void Start() {
 		if ( transform.tag == "DropZone") {
-			this.CurrentHolders = GetComponent<DropZone>().Unit.tag;
+			this.unitType = GetComponent<DropZone>().Unit.tag;
+			this.CurrentlyHeldBy = GetComponent<DropZone>().Unit.tag;
 		}
 		
 		InvokeRepeating("releaseTheTroops",1.0f,2.0f);
@@ -26,7 +27,10 @@ public class Selectable : MonoBehaviour {
 	public int CurrentTrooperCount = 0;
 	public int CurrentBugCount = 0;
 	
-	public string CurrentHolders;
+	public string unitType;
+	public string CurrentlyHeldBy;
+
+	
 	
 	public Transform TrooperTarget = null;
 	private List<Transform> TrooperUnits = new List<Transform>();
@@ -38,7 +42,7 @@ public class Selectable : MonoBehaviour {
 	public bool isSelected = false;
 
 	// node is blocked
-	public bool isBlocked = false;
+//	public bool isBlocked = false;
 	
 	private readonly object TrooperUnitsLock = new object();
 	private readonly object BugUnitsLock = new object();
@@ -167,7 +171,6 @@ public class Selectable : MonoBehaviour {
 	// CurrentTrooperCount is increased thorugh PermissionToBoard()
 	public void EnqeueUnit( Transform unit ) {
 		
-		
 		if (unit.tag == "Trooper" ) {
 			lock ( this.TrooperUnitsLock ) {
 				unit.GetComponent<UnitLogic>().Dock(transform);
@@ -186,37 +189,59 @@ public class Selectable : MonoBehaviour {
 		// - check if the selectable is a dropzone..
 		// - and only make this check if the units entering the node is different from
 		//   the race currently holding the node
-		if ( transform.tag == "DropZone" && this.CurrentHolders != unit.tag) {
-						
-			if ( unit.tag == "Bug") {
-				if ( this.CurrentTrooperCount <= 0 && this.CurrentBugCount > 0 ) {
-					Debug.LogWarning("Bugs just overtook a DropZone!");
-					GetComponent<DropZone>().SetSpawnUnits("Bug");
-					this.CurrentHolders = "Bug";
-				}
-			} else {
-				if ( this.CurrentTrooperCount > 0 && this.CurrentBugCount <= 0 ) {
-					Debug.LogWarning("Troopers just overtook a DropZone!");
-					GetComponent<DropZone>().SetSpawnUnits("Trooper");
-					this.CurrentHolders = "Trooper";
-				}
+		//if ( transform.tag == "DropZone" ) checkForTakeOver(unit.tag);
+	}
+	
+//	private void checkForStatusAfterDeath(string tag) {
+//		Debug.Log("unit" + tag+ " died, checking if we need to relase node.." + "(" +this.CurrentBugCount+"," + this.CurrentTrooperCount +")");
+//		if ( this.CurrentTrooperCount == 0 && this.CurrentBugCount == 0 ) {
+//			Debug.Log("unit" + tag+ " died and released the dropzone");
+//			GetComponent<DropZone>().Neutral();
+//		}
+//	}
+	
+	public string GetDominantUnit() {
+		
+		//if ( this.CurrentBugCount > 0 )  
+		
+		if ( GetComponent<DropZone>().Unit.tag == "Trooper" ) {
+			if ( this.CurrentBugCount <= 0 ) {
+				return "Trooper";
 			}
+			
+			return "Bug";
+		} else {
+			if ( this.CurrentTrooperCount <= 0 ) {
+				return "Bug";
+			} 
+			
+			return "Trooper";
 		}
 	}
 	
-//	public void DeployUnit(Transform unit) {
-//		unit.GetComponent<UnitLogic>().SetNewTarget(this.TrooperTarget);
-//		this.CurrentTrooperCount -= 1;
-//	}
-	
-//	public void DeployUnitsFromQueue(int count) {
-//		// 2) pop unit from list
+//	private void checkForTakeOver( string unit ) {
 //		
+//		if ( this.CurrentlyHeldBy != unit ) {
+//			// if currently blocked by enemy units
+//			if ( unit == "Bug" ) {
+//				if ( this.CurrentTrooperCount <= 0 && this.CurrentBugCount > 0 ) {
+//					Debug.LogWarning("Bugs just overtook a DropZone!");
+//					//GetComponent<DropZone>().TakeOver("Bug");
+//					this.CurrentlyHeldBy = "Bug";
+//				}
+//			} else {
+//				if ( this.CurrentTrooperCount > 0 && this.CurrentBugCount <= 0 ) {
+//					Debug.LogWarning("Troopers just overtook a DropZone!");
+//					//GetComponent<DropZone>().TakeOver("Trooper");
+//					this.CurrentlyHeldBy = "Trooper";
+//				}
+//			}
+//		}
 //	}
-	private void releaseTheBugs() {
+		
+	public void releaseTheBugs() {
 		// only release units if the node has been unblocked
-		if ( this.isBlocked || 
-			 this.BugTarget == null ||
+		if ( this.BugTarget == null ||
 			 this.BugUnits.Count == 0 ) return;
 		
 		//Debug.LogError("TrooperUnits length: " + this.TrooperUnits.length);
@@ -237,12 +262,12 @@ public class Selectable : MonoBehaviour {
 				this.CurrentBugCount -= 1;
 			}
 		}
+		//this.checkForTakeOver("");
 	}
 	
 	private void releaseTheTroops() {
 		// only release units if the node has been unblocked
-		if ( this.isBlocked || 
-			 this.TrooperTarget == null ||
+		if ( this.TrooperTarget == null ||
 			 this.TrooperUnits.Count == 0 ) return;
 		
 		//Debug.LogError("TrooperUnits length: " + this.TrooperUnits.length);
@@ -265,6 +290,8 @@ public class Selectable : MonoBehaviour {
 			}
 			//this.CurrentTrooperCount -= this.TrooperUnits.Count;
 		}
+		//this.checkForTakeOver("");
+
 	}
 	
 	// handles: enemies entering the node
@@ -289,7 +316,6 @@ public class Selectable : MonoBehaviour {
 				//Debug.LogError("Approaching unit has arrived!: " + this.ApproachingTroopers);
 				//Debug.LogError("Trooper entered!");
 				if ( this.TrooperTarget != null &&
-					 !this.isBlocked &&
 					 this.TrooperTarget.GetComponent<Selectable>().PermissionToBoard(1, unit.tag) == 1) {
 					//Debug.LogError("Zone is unblocked and has a target!")
 					// might be a race condition
@@ -306,7 +332,7 @@ public class Selectable : MonoBehaviour {
 				
 				if ( this.BugTarget != null &&
 					 this.BugTarget.GetComponent<Selectable>().PermissionToBoard(1, unit.tag) == 1) {
-					Debug.LogError("Bug has a target!");
+					//Debug.LogError("Bug has a target!");
 					// might be a race condition
 					
 					unit.GetComponent<UnitLogic>().SetNewTarget(this.BugTarget);
@@ -378,7 +404,7 @@ public class Selectable : MonoBehaviour {
 				}
 				
 				this.CurrentTrooperCount -= 1;
-				
+				//this.checkForStatusAfterDeath(unit.tag);
 			}
 		} else {
 			lock ( this.BugUnitsLock ) {
@@ -391,6 +417,7 @@ public class Selectable : MonoBehaviour {
 						break;
 					}
 				}
+				//this.checkForStatusAfterDeath(unit.tag);
 				this.CurrentBugCount -= 1;
 			}
 		}

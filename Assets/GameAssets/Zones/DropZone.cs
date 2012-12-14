@@ -9,26 +9,70 @@ public class DropZone : MonoBehaviour {
 	public Transform Unit;
 	private int spawnCount = 0;
 	public Vector3 displace = Vector3.zero;
+	public bool isBlocked = false;
 	//var Target : Transform;
 
 	public void Start () {
 		InvokeRepeating("SpawnUnits", 1.0f, spawnTimer);
 	}
 	
-	public void SetSpawnUnits(string type) {
-		if (Unit.tag == type) return;
-		
-		if ( type  == "Trooper") {
-			Unit = Trooper;
-		} else {
-			Unit = Bug;	
+	public void Update() {
+		//bool tmp = isBlocked;
+		string unit_dom = GetComponent<Selectable>().GetDominantUnit();
+		if ( unit_dom != Unit.tag && !isBlocked ) {
+			isBlocked = true;
+			GameObject.Find("GameLogic").GetComponent<GameState>().DropZoneConquor(unit_dom);
+		} else if ( unit_dom == Unit.tag && isBlocked ) {
+			isBlocked = false;	
+			GameObject.Find("GameLogic").GetComponent<GameState>().DropZoneConquor(Unit.tag);
 		}
-		
-		GameObject.Find("GameLogic").GetComponent<GameState>().DropZoneConquor(type);
-		//return Unit.tag;
 	}
 	
+//	public void UpdateState() {
+//				
+//	}
+//	
+//	public void UnBlock(string unit) {
+//		// if an enemy unit inters the dropzone
+//		// (determined by the type of unit.tag they produce)
+//		this.isBlocked = false;
+//		GameObject.Find("GameLogic").GetComponent<GameState>().DropZoneConquor(unit);
+//	}
+//	
+//	public void Block(string unit) {
+//		// if an enemy unit inters the dropzone
+//		// (determined by the type of unit.tag they produce)
+//		this.isBlocked = true;
+//		GameObject.Find("GameLogic").GetComponent<GameState>().DropZoneConquor(unit);
+//	}
+	
+//	public void TakeOver( string unit ) {
+//		
+//		if ( unit == "" ) {
+//			this.isBlocked = false;
+//		}
+//		
+//		if ( unit == Unit.tag ) {
+//			this.isBlocked = false;	
+//		} else {
+//			this.isBlocked = true;
+//		}	
+//		GameObject.Find("GameLogic").GetComponent<GameState>().DropZoneConquor(unit);
+//	}
+	
+	// unit dies while docked at node
+//	public void Neutral() {
+//		
+//		this.isBlocked = false;	
+//		
+//		GameObject.Find("GameLogic").GetComponent<GameState>().DropZoneRelease(Unit.tag);
+//	}
+	
+	
 	private void SpawnUnits() {
+		
+		if ( this.isBlocked ) return;
+		
 		Transform unit;
 		
 		if ( GameObject.Find("GameLogic").GetComponent<GameState>().gameOver ) return;

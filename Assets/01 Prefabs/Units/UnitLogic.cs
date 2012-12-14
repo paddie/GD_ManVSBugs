@@ -40,11 +40,8 @@ public class UnitLogic : MonoBehaviour {
 		InvokeRepeating("ScanForEnemies", 0.0f, ScanFrequency);
 	}
 	
-	public void Update() {
-
-	}
+	private Transform LocateClosestEnemy() {
 		
-		private Transform LocateClosestEnemy() {
 		Transform closestEnemy = null;
 		Collider[] objectsInRange = Physics.OverlapSphere(transform.position, ScanRadius);
 		float minDistance = 100.0f;
@@ -54,7 +51,7 @@ public class UnitLogic : MonoBehaviour {
 	        if ( enemy.tag == enemyTag ) {
 				RaycastHit hit;
 				Vector3 direction = enemy.position - transform.position+Vector3.up;
-				if ( Physics.Raycast (transform.position+Vector3.up, direction, out hit,this.ScanRadius, this.selectionLayer) ) { 
+				if ( Physics.Raycast (transform.position, direction, out hit,this.ScanRadius, this.selectionLayer) ) { 
 					//Debug.DrawRay(transform.position, enemy.position - transform.position, Color.red);
 					//Debug.LogWarning("enemy hidden by terrain");
 					continue;
