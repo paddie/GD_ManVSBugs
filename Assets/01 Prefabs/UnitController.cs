@@ -9,12 +9,12 @@ public class UnitController : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		rigidBody = GetComponent<Rigidbody>();
-
+		rigidBody.freezeRotation = true;
 	}
 	
 	// Update is called once per frame
 	void Update () {
-		if (GetComponent<AIPath>().canMove) {
+		if (GetComponent<AIPath>().enabled && GetComponent<AIPath>().canMove) {
 			rigidBody.velocity = move;
 		} else {
 			rigidBody.velocity = Vector3.zero;
@@ -22,6 +22,7 @@ public class UnitController : MonoBehaviour {
 	}
 	
 	public void setVelocity(Vector3 v) {
-		move = v;	
+		if (v.magnitude < 75)
+			move = v;	
 	}
 }

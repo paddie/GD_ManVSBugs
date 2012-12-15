@@ -20,7 +20,6 @@ public class GameState : MonoBehaviour {
 	
 	private readonly object statLock = new object();
 
-	
 	// Use this for initialization
 	void Start () {
 		GameObject[] gos = GameObject.FindGameObjectsWithTag("DropZone");

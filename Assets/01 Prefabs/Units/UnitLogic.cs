@@ -26,6 +26,7 @@ public class UnitLogic : MonoBehaviour {
 	private bool isDead = false;
 	private Transform currentEnemy = null;
 	
+	
 	public LayerMask selectionLayer;
 
 	
@@ -40,6 +41,7 @@ public class UnitLogic : MonoBehaviour {
 	}
 	
 	private Transform LocateClosestEnemy() {
+		
 		Transform closestEnemy = null;
 		Collider[] objectsInRange = Physics.OverlapSphere(transform.position, ScanRadius);
 		float minDistance = 100.0f;
@@ -48,7 +50,7 @@ public class UnitLogic : MonoBehaviour {
 			// only check items that respoond to enemyTag
 	        if ( enemy.tag == enemyTag ) {
 				RaycastHit hit;
-				Vector3 direction = enemy.position - transform.position;
+				Vector3 direction = enemy.position - transform.position+Vector3.up;
 				if ( Physics.Raycast (transform.position, direction, out hit,this.ScanRadius, this.selectionLayer) ) { 
 					//Debug.DrawRay(transform.position, enemy.position - transform.position, Color.red);
 					//Debug.LogWarning("enemy hidden by terrain");
@@ -73,7 +75,7 @@ public class UnitLogic : MonoBehaviour {
 			RaycastHit hit;
 			Vector3 direction = this.currentEnemy.position - transform.position;
 			if ( Vector3.Distance(this.currentEnemy.position, transform.position) > this.ScanRadius ||
-				Physics.Raycast (transform.position, direction, out hit,this.ScanRadius, this.selectionLayer) ) {
+				Physics.Raycast (transform.position+Vector3.up, direction, out hit,this.ScanRadius, this.selectionLayer) ) {
 				
 				this.currentEnemy = null;
 			} else {
@@ -98,7 +100,8 @@ public class UnitLogic : MonoBehaviour {
 		float prob = UnityEngine.Random.Range(0.0f,100.0f);
 		if ( prob <= unitAccuracy ) {
 			try {
-				Debug.DrawRay(transform.position, enemy.position - transform.position, Color.red);
+				StartAttacking (enemy.position);
+				Invoke ("StopAttacking",0.05f);
 				enemy.GetComponent<UnitLogic>().DoDamage(baseDamage);
 			} catch (MissingReferenceException e) {
 				return;
@@ -108,7 +111,20 @@ public class UnitLogic : MonoBehaviour {
 		}
 	}
 	
+	private void StartAttacking(Vector3 to) {
+		transform.GetComponent<AnimationController>().StartAttacking(to);
+	}
+	
+	private void StopAttacking() {
+		transform.GetComponent<AnimationController>().StopAttacking();
+	}
+	
+	private void StopMoving() {
+		GetComponent<AIPath>().enabled = false;
+	}
+	
 	public void Dock(Transform node) {
+		Invoke ("StopMoving",0.5f);
 		GetComponent<AIPath>().target = node;
 		this.hasArrived = true;
 		//GetComponent<AIPath>().canMove = false;
@@ -119,6 +135,7 @@ public class UnitLogic : MonoBehaviour {
 	private readonly object isDeadLock = new object();
 	
 	public void SetNewTarget(Transform node) {
+		GetComponent<AIPath>().enabled = true;
 		//lock ( this.targetLock ) {
 		GetComponent<AIPath>().target = node;
 		//}
