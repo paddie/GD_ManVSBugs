@@ -76,13 +76,16 @@ public class Controller : MonoBehaviour {
 		if (count>1) {
 			lastSelected = selected[count-2];
 		if (lastSelected.position!=t.position)
-				if (t.GetComponent<Route>().target != lastSelected) {
+			if (t.GetComponent<Route>().target != lastSelected) {
 				lastSelected.GetComponent<Selectable>().SetTargetTrooper (lastSelected, t);
 				//lastSelected.GetComponent<Seeker>().StartPath(lastSelected.position,t.position);
 				//lastSelected.GetComponent<Route>().target = t;
 			}
+		} else if (count > 2) {
+			Transform origin = selected[count-3];
+			ClearSelection();
+			Select (origin);
 		}
-			
 	}
 	
 	void ClearSelection() {
