@@ -244,7 +244,7 @@ public class Selectable : MonoBehaviour {
 		
 	public void releaseTheBugs() {
 		
-		if ( this.BugTargets == null || this.BugUnits.Count == 0 ) {
+		if ( this.BugTargets == null || this.BugUnits.Count == 0 || this.BugTargets.Count < 1 ) {
 			return;
 		}
 			
@@ -261,7 +261,7 @@ public class Selectable : MonoBehaviour {
 			Transform currentBugTarget = this.BugTargets[target];
 
 			
-			int permissable = this.BugTarget.GetComponent<Selectable>().PermissionToBoard(this.BugUnits.Count, "Bug");
+			int permissable = currentBugTarget.GetComponent<Selectable>().PermissionToBoard(this.BugUnits.Count, "Bug");
 			// no room for units at the next node
 			if ( permissable == 0 ) { return; }
 			
