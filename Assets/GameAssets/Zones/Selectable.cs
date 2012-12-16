@@ -219,6 +219,8 @@ public class Selectable : MonoBehaviour {
 		}
 	}
 	
+	
+	public List<Transform> BugTargets;
 //	private void checkForTakeOver( string unit ) {
 //		
 //		if ( this.CurrentlyHeldBy != unit ) {
@@ -240,40 +242,24 @@ public class Selectable : MonoBehaviour {
 //	}
 		
 	public void releaseTheBugs() {
-		// only release units if the node has been unblocked
-		if ( this.BugTarget == null ||
-			 this.BugUnits.Count == 0 ) return;
 		
-		
-		if ( transform.tag == "DropZone" ) {
+		if ( this.BugTargets == null || this.BugUnits.Count == 0 ) {
+			return;
+		}
 			
-			if ( this.CurrentBugCount < this.BugCapacity ) {
-				return;	
-			}
-			
-			lock(this.BugUnitsLock ) {
-				int permissable = this.BugTarget.GetComponent<Selectable>().PermissionToBoard(this.BugUnits.Count, "Bug");
-				// no room for units at the next node
-				if ( permissable == 0 ) { return; }
-				
-				//Transform unit = null;
-				for ( int i = 0; i < permissable ; i++ ) {
-					try {
-						this.BugUnits[0].GetComponent<UnitLogic>().SetNewTarget(this.BugTarget);
-						this.BugUnits.RemoveAt(0);
-					} catch (Exception e) {
-						
-					}
-					this.CurrentBugCount -= 1;
-				}
-			}
-			
-			
+		if ( transform.tag == "DropZone" && this.CurrentBugCount < 2 )  {
+			return;
 		}
 		
-		//Debug.LogError("TrooperUnits length: " + this.TrooperUnits.length);
-		// 1) reserve space on the node
 		lock(this.BugUnitsLock ) {
+			int target = UnityEngine.Random.Range(0, this.BugTargets.Count);
+			
+			
+//			Debug.LogWarning("chose between " + this.BugTargets.Count + ", chose " + (target+1) );
+			
+			Transform currentBugTarget = this.BugTargets[target];
+
+			
 			int permissable = this.BugTarget.GetComponent<Selectable>().PermissionToBoard(this.BugUnits.Count, "Bug");
 			// no room for units at the next node
 			if ( permissable == 0 ) { return; }
@@ -281,7 +267,7 @@ public class Selectable : MonoBehaviour {
 			//Transform unit = null;
 			for ( int i = 0; i < permissable ; i++ ) {
 				try {
-					this.BugUnits[0].GetComponent<UnitLogic>().SetNewTarget(this.BugTarget);
+					this.BugUnits[0].GetComponent<UnitLogic>().SetNewTarget(currentBugTarget);
 					this.BugUnits.RemoveAt(0);
 				} catch (Exception e) {
 					
@@ -289,7 +275,6 @@ public class Selectable : MonoBehaviour {
 				this.CurrentBugCount -= 1;
 			}
 		}
-		//this.checkForTakeOver("");
 	}
 	
 	private void releaseTheTroops() {
@@ -352,11 +337,13 @@ public class Selectable : MonoBehaviour {
 			// bug logic
 			} else {
 				this.ApproachingBugs -= 1;
-				
+				//Debug.LogError("Bug entered zone!");
 				if ( transform.tag == "DropZone" ) {
 					this.EnqeueUnit(unit);					
 					return;
 				}
+				
+				//if ( this.BugTarget != null ) Debug.LogError("zone has a target!");
 				
 				if ( this.BugTarget != null &&
 					 this.BugTarget.GetComponent<Selectable>().PermissionToBoard(1, unit.tag) == 1) {
@@ -379,7 +366,7 @@ public class Selectable : MonoBehaviour {
 	
 	// set bug target
 	public void SetTargetBug(Transform target) {
-		BugTarget = target;
+		this.BugTarget = target;
 		// there is a race-condition here..
 		// - just in case a number of units are added to the array as we set the target..
 		//BugTarget.GetComponent(Selection).TargetRenderOn();

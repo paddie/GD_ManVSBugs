@@ -123,23 +123,29 @@ public class UnitLogic : MonoBehaviour {
 		GetComponent<AIPath>().enabled = false;
 	}
 	
+	private void GetMoving() {
+		GetComponent<AIPath>().enabled = true;
+	}
+	
 	public void Dock(Transform node) {
 		Invoke ("StopMoving",0.5f);
 		GetComponent<AIPath>().target = node;
 		this.hasArrived = true;
+		StopMoving();
 		//GetComponent<AIPath>().canMove = false;
-		GetComponent<AIPath>().canSearch = false;
+		//GetComponent<AIPath>().canSearch = false;
 	}
 	
 	private readonly object targetLock = new object();
 	private readonly object isDeadLock = new object();
 	
 	public void SetNewTarget(Transform node) {
-		GetComponent<AIPath>().enabled = true;
 		//lock ( this.targetLock ) {
 		GetComponent<AIPath>().target = node;
-		//}
 		this.hasArrived = false;
+		GetMoving();
+		//}
+		
 		//GetComponent<AIPath>().canMove = true;
 		GetComponent<AIPath>().canSearch = true;
 	}
