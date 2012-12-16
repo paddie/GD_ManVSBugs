@@ -13,7 +13,7 @@ public class UnitController : MonoBehaviour {
 	}
 	
 	// Update is called once per frame
-	void Update () {
+	void FixedUpdate () {
 		if (GetComponent<AIPath>().enabled && GetComponent<AIPath>().canMove) {
 			rigidBody.velocity = move;
 		} else {

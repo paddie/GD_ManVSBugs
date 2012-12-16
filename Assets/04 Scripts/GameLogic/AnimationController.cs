@@ -12,6 +12,7 @@ public class AnimationController : MonoBehaviour {
 	
 	/** Speed relative to velocity with which to play animations */
 	public float animationSpeed = 0.2F;
+	public float attackSpeedModifier = 1.0f;
 	
 	public bool attacking = false;
 	public bool drawTracer = true;
@@ -50,7 +51,7 @@ public class AnimationController : MonoBehaviour {
 			idleAnimation = "idle";
 			walkingAnimation = "walk";
 		}
-		
+		anim[firingAnimation].wrapMode = WrapMode.Clamp;
 		
 		//Prioritize the walking animation
 		anim[walkingAnimation].layer = 10;
@@ -66,6 +67,7 @@ public class AnimationController : MonoBehaviour {
 	}
 	
 	public void Update() {
+		if (!attacking) {
 		Vector3 velocity = this.GetComponent<Rigidbody>().velocity;
 		Vector3 relVelocity = transform.InverseTransformDirection (velocity);
 		if (velocity.sqrMagnitude <= sleepVelocity*sleepVelocity) {
@@ -77,16 +79,20 @@ public class AnimationController : MonoBehaviour {
 			
 			//Modify animation speed to match velocity
 			AnimationState state = anim[walkingAnimation];
-			
 			float speed = relVelocity.z;
 			state.speed = speed*animationSpeed;
 		}
+		}
 	}
 	
-	public void StartAttacking(Vector3 to) {
+	public void StartAttacking(Vector3 to, AudioClip audio) {
+		if (attacking) 
+			return;
+		AudioSource.PlayClipAtPoint(audio,transform.position);
 		Quaternion targetRotation = Quaternion.LookRotation(to - transform.position);
 		transform.rotation = targetRotation;
 		anim.Play (firingAnimation);
+		attacking = true;
 		lr.SetPosition(0, transform.position+Vector3.up);
 		lr.SetPosition(1, to+Vector3.up+ new Vector3(Random.value,Random.value,Random.value));
 		if (drawTracer)
@@ -97,11 +103,10 @@ public class AnimationController : MonoBehaviour {
 	}
 	
 	public void StopAttacking() {
+		attacking = false;
 		lr.enabled = false;
 		if (gameObject.tag == "Trooper") {
 			BroadcastMessage("StopFiring");
-		} else {
-			anim.Play (idleAnimation);
 		}
 	}
  }

@@ -26,6 +26,8 @@ public class UnitLogic : MonoBehaviour {
 	private bool docked = false;
 	private bool isDead = false;
 	private Transform currentEnemy = null;
+	public List<AudioClip> deathSounds = new List<AudioClip>();
+	public List<AudioClip> attackSounds = new List<AudioClip>();
 	
 	
 	public LayerMask selectionLayer;
@@ -99,8 +101,9 @@ public class UnitLogic : MonoBehaviour {
 		float prob = UnityEngine.Random.Range(0.0f,100.0f);
 		if ( prob <= unitAccuracy ) {
 			try {
-				StartAttacking (enemy.position);
-				Invoke ("StopAttacking",0.05f);
+				int r = (int) Mathf.Round(UnityEngine.Random.value*(attackSounds.Count-1));
+				StartAttacking (enemy.position,attackSounds[r]);
+				Invoke ("StopAttacking",0.5f);
 				enemy.GetComponent<UnitLogic>().DoDamage(baseDamage);
 			} catch (MissingReferenceException e) {
 				return;
@@ -110,8 +113,8 @@ public class UnitLogic : MonoBehaviour {
 		}
 	}
 	
-	private void StartAttacking(Vector3 to) {
-		transform.GetComponent<AnimationController>().StartAttacking(to);
+	private void StartAttacking(Vector3 to, AudioClip audio) {
+		transform.GetComponent<AnimationController>().StartAttacking(to,audio);
 	}
 	
 	private void StopAttacking() {
@@ -159,6 +162,10 @@ public class UnitLogic : MonoBehaviour {
 			if ( this.baseHealth <= 0 && !this.isDead) {
 				this.isDead = true;
 				tearDown = true;
+				int r1 = (int) Mathf.Round(UnityEngine.Random.value*(deathSounds.Count-1));
+				if (r1 < deathSounds.Count) {
+					AudioSource.PlayClipAtPoint(deathSounds[r1],transform.position);
+				}
 			}
 		}
 		
@@ -182,6 +189,5 @@ public class UnitLogic : MonoBehaviour {
 		}
 		
 		Destroy(gameObject);
-
 	}
 }

@@ -134,7 +134,7 @@ public class Selectable : MonoBehaviour {
 		//transform.Find("SelectPlate").GetComponent(MeshRenderer).enabled = true;
 		//transform.Find("TargetPlate").GetComponent(MeshRenderer).enabled = false;
 		// if node has a target, show that target!
-		//if (this.TrooperTarget != null) {
+		//if (this.TroopserTarget != null) {
 			//TrooperTarget.GetComponent(Selection).DeSelect();
 			//TrooperTarget.GetComponent(Selection).TargetRenderOn(1);
 		//}
