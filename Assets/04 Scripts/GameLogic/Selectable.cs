@@ -317,47 +317,39 @@ public class Selectable : MonoBehaviour {
 	public void unitEntered(Transform unit) {
 		//Debug.Log(unit.name+ "entered zone");
 		// if unit is freshly spawned or has this node as a target (meaning it's not passing through)
-		if ( unit.GetComponent<AIPath>().target == null || unit.GetComponent<AIPath>().target == transform ) {
-			// trooper logic
+		if (unit.GetComponent<AIPath>().target != null && unit.GetComponent<AIPath>().target != transform ) return;
+		
+		if ( transform.tag == "DropZone" ) {
 			if (unit.tag == "Trooper" ) {
-				
 				this.ApproachingTroopers -= 1;
-				//Debug.LogError("Approaching unit has arrived!: " + this.ApproachingTroopers);
-				//Debug.LogError("Trooper entered!");
-				if ( this.TrooperTarget != null &&
-					 this.TrooperTarget.GetComponent<Selectable>().PermissionToBoard(1, unit.tag) == 1) {
-					//Debug.LogError("Zone is unblocked and has a target!")
-					// might be a race condition
-					
-					unit.GetComponent<UnitLogic>().SetNewTarget(this.TrooperTarget);
-					return;
-				}
-				//unit.GetComponent( Route ).target = transform;
-				//this.CurrentTrooperCount += 1;
-				this.EnqeueUnit(unit);
-			// bug logic
 			} else {
-				this.ApproachingBugs -= 1;
-				//Debug.LogError("Bug entered zone!");
-				if ( transform.tag == "DropZone" ) {
-					this.EnqeueUnit(unit);					
-					return;
-				}
-				
-				//if ( this.BugTarget != null ) Debug.LogError("zone has a target!");
-				
-				if ( this.BugTarget != null &&
-					 this.BugTarget.GetComponent<Selectable>().PermissionToBoard(1, unit.tag) == 1) {
-					//Debug.LogError("Bug has a target!");
-					// might be a race condition
-					
-					unit.GetComponent<UnitLogic>().SetNewTarget(this.BugTarget);
-					return;
-				}
-				//unit.GetComponent( Route ).target = transform;
-				//this.CurrentTrooperCount += 1;
-				this.EnqeueUnit(unit);
+				this.ApproachingBugs -= 1;	
 			}
+			
+			this.EnqeueUnit(unit);					
+			return;
+		}
+		
+		if (unit.tag == "Trooper" ) {
+			
+			this.ApproachingTroopers -= 1;
+			
+			if ( this.TrooperTarget != null &&
+				 this.TrooperTarget.GetComponent<Selectable>().PermissionToBoard(1, unit.tag) == 1) {
+				//Debug.LogError("Zone is unblocked and has a target!")
+				// might be a race condition
+				
+				unit.GetComponent<UnitLogic>().SetNewTarget(this.TrooperTarget);
+				return;
+			}
+			
+			this.EnqeueUnit(unit);
+			
+		} else {
+			//always enqueue
+			// unit is actually heading here
+			this.ApproachingBugs -= 1;
+			this.EnqeueUnit(unit);
 		}
 	}
 	
